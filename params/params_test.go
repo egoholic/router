@@ -24,46 +24,38 @@ var _ = Describe("Params", func() {
 			})
 		})
 	})
-
 	Context("accessors", func() {
 		BeforeEach(func() {
 			params = New(path1, method1, map[string][]string{})
 		})
-
 		Describe(".Path()", func() {
 			It("returns path", func() {
 				Expect(params.Path()).To(Equal(path1))
 			})
 		})
-
 		Describe(".PathChunks()", func() {
 			It("returns path", func() {
 				Expect(params.PathChunks()).To(Equal([]string{"", "articles"}))
 			})
 		})
-
 		Describe(".Verb()", func() {
 			It("returns path", func() {
 				Expect(params.Verb()).To(Equal(method1))
 			})
 		})
 	})
-
 	Describe(".NewIterator()", func() {
 		It("returns iterator", func() {
 			params = New(path1, method1, map[string][]string{})
 			Expect(params.NewIterator()).To(BeAssignableToTypeOf(&PathChunksIterator{}))
 		})
 	})
-
 	Describe("PathChunksIterator", func() {
 		var iterator *PathChunksIterator
-
 		BeforeEach(func() {
 			params = New(path1, method1, map[string][]string{})
 			iterator = params.NewIterator()
 		})
-
 		Describe(".HasNext()", func() {
 			Context("when has next", func() {
 				It("returns true", func() {
@@ -71,7 +63,6 @@ var _ = Describe("Params", func() {
 					Expect(iterator.HasNext()).To(BeTrue())
 				})
 			})
-
 			Context("when has no next", func() {
 				It("returns false", func() {
 					Expect(iterator.Current()).To(Equal(""))
@@ -81,7 +72,6 @@ var _ = Describe("Params", func() {
 				})
 			})
 		})
-
 		Describe(".Next()", func() {
 			Context("when has next", func() {
 				It("returns path chunk", func() {
@@ -90,7 +80,6 @@ var _ = Describe("Params", func() {
 				})
 			})
 		})
-
 		Describe(".Current()", func() {
 			It("returns current path chunk", func() {
 				Expect(iterator.Current()).To(Equal(""))
