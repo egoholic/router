@@ -26,7 +26,9 @@ var _ = Describe("Params", func() {
 	})
 	Context("accessors", func() {
 		BeforeEach(func() {
-			params = New(path1, method1, map[string]interface{}{})
+			prmsMap := map[string]interface{}{}
+			prmsMap[":article_id"] = 11
+			params = New(path1, method1, prmsMap)
 		})
 		Describe(".Path()", func() {
 			It("returns path", func() {
@@ -41,6 +43,50 @@ var _ = Describe("Params", func() {
 		Describe(".Verb()", func() {
 			It("returns path", func() {
 				Expect(params.Verb()).To(Equal(method1))
+			})
+		})
+		Describe(".Get()", func() {
+			Context("when param exists", func() {
+				It("returns param's value and ok", func() {
+					val, ok := params.Get(":article_id")
+					Expect(ok).To(BeTrue())
+					Expect(val).NotTo(BeNil())
+					Expect(val.(int)).To(Equal(11))
+				})
+			})
+			Context("when there is no param with given name", func() {
+				It("returns nil and not ok", func() {
+					val, ok := params.Get(":rubric_id")
+					Expect(ok).To(BeFalse())
+					Expect(val).To(BeNil())
+				})
+			})
+		})
+		Describe(".Set()", func() {
+			Context("when param exists", func() {
+				It("updates value", func() {
+					val, ok := params.Get(":article_id")
+					Expect(ok).To(BeTrue())
+					Expect(val).NotTo(BeNil())
+					Expect(val.(int)).To(Equal(11))
+					params.Set(":article_id", 13)
+					val, ok = params.Get(":article_id")
+					Expect(ok).To(BeTrue())
+					Expect(val).NotTo(BeNil())
+					Expect(val.(int)).To(Equal(13))
+				})
+			})
+			Context("when there is no param with given name", func() {
+				It("sets value", func() {
+					val, ok := params.Get(":rubric_id")
+					Expect(ok).To(BeFalse())
+					Expect(val).To(BeNil())
+					params.Set(":rubric_id", 3)
+					val, ok = params.Get(":rubric_id")
+					Expect(ok).To(BeTrue())
+					Expect(val).NotTo(BeNil())
+					Expect(val.(int)).To(Equal(3))
+				})
 			})
 		})
 	})
