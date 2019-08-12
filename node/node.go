@@ -13,35 +13,67 @@ const (
 	DELETE = "DELETE"
 )
 
+type Form interface {
+	CheckAndPopulate(pattern string, pathChunk string, prms *params.Params) bool
+}
 type Node struct {
-	pathChunk    string
-	children     map[string]*Node
-	verbHandlers map[string]*handler.Handler
+	pathChunk       string
+	form            Form
+	staticChildren  map[string]*Node
+	dynamicChildren map[string]*Node
+	verbHandlers    map[string]*handler.Handler
 }
 
-func New(chunk string) *Node {
-	return &Node{chunk, map[string]*Node{}, map[string]*handler.Handler{}}
+func New(pch string, form Form) *Node {
+	return &Node{
+		pathChunk:       pch,
+		form:            form,
+		staticChildren:  map[string]*Node{},
+		dynamicChildren: map[string]*Node{},
+		verbHandlers:    map[string]*handler.Handler{},
+	}
 }
-func (n *Node) Sub(pathChunk string) *Node {
-	var node *Node
-	node = n.children[pathChunk]
-	if node != nil {
+func (n *Node) Child(pathChunk string, form Form) *Node {
+	var (
+		node *Node
+		ok   bool
+	)
+	if pathChunk[0] == ':' {
+		node, ok = n.dynamicChildren[pathChunk]
+		if ok {
+			return node
+		}
+		node = New(pathChunk, form)
+		n.dynamicChildren[pathChunk] = node
 		return node
 	}
-
-	node = New(pathChunk)
-	n.children[pathChunk] = node
+	node, ok = n.staticChildren[pathChunk]
+	if ok {
+		return node
+	}
+	node = New(pathChunk, form)
+	n.staticChildren[pathChunk] = node
 	return node
 }
-func (n *Node) Handler(p *params.Params, pathChunks *params.PathChunksIterator) *handler.Handler {
-	if pathChunks.HasNext() {
-		chunk, _ := pathChunks.Next()
-		if child, ok := n.children[chunk]; ok {
-			return child.Handler(p, pathChunks)
+
+func (n *Node) Handler(prms *params.Params, pathChunks *params.PathChunksIterator) *handler.Handler {
+	if n.form.CheckAndPopulate(n.pathChunk, pathChunks.Current(), prms) {
+		if pathChunks.HasNext() {
+			chunk, _ := pathChunks.Next()
+			child, ok := n.staticChildren[chunk]
+			if ok && child.form.CheckAndPopulate(child.pathChunk, pathChunks.Current(), prms) {
+				return child.Handler(prms, pathChunks)
+			}
+			for _, child := range n.dynamicChildren {
+				if child != nil && child.form.CheckAndPopulate(child.pathChunk, pathChunks.Current(), prms) {
+					return child.Handler(prms, pathChunks)
+				}
+			}
+		} else {
+			return n.verbHandlers[prms.Verb()]
 		}
-		return nil
 	}
-	return n.verbHandlers[p.Verb()]
+	return nil
 }
 func (n *Node) GET(fn handler.HandlerFn, d string) {
 	n.verbHandlers[GET] = handler.New(fn, d)
@@ -57,4 +89,10 @@ func (n *Node) PATCH(fn handler.HandlerFn, d string) {
 }
 func (n *Node) DELETE(fn handler.HandlerFn, d string) {
 	n.verbHandlers[DELETE] = handler.New(fn, d)
+}
+
+type DumbForm struct{}
+
+func (_ *DumbForm) CheckAndPopulate(_ string, _ string, _ *params.Params) bool {
+	return true
 }

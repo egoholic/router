@@ -9,7 +9,8 @@ import (
 
 func ExampleHandlerFunc(w http.ResponseWriter, r *http.Request, p *params.Params) {
 	w.WriteHeader(200)
-	w.Header().Add("TEST-HEADER", p.Param("header")[0])
+	val, _ := p.Get("header")
+	w.Header().Add("TEST-HEADER", val.(string))
 	_, err := w.Write([]byte("hello!"))
 	if err != nil {
 		fmt.Printf("\n\t\tERROR: %s\n\n", err.Error())

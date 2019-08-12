@@ -33,19 +33,19 @@ var _ = Describe("Router", func() {
 				It("returns handler", func() {
 					r := New()
 					description := "description"
-					_prms := map[string][]string{}
+					_prms := map[string]interface{}{}
 					_prms["header"] = []string{"TestHeader"}
 					prms := params.New("/", node.GET, _prms)
 					r.Root().GET(ExampleHandlerFunc, description)
 					h := r.Handler(prms)
 					Expect(h).To(BeAssignableToTypeOf(&handler.Handler{}))
 
-					_prms2 := map[string][]string{}
+					_prms2 := map[string]interface{}{}
 					_prms2["header"] = []string{"TestHeader2"}
 					description2 := "description2"
 					prms2 := params.New("/articles", node.GET, _prms2)
 
-					r.Root().Sub("articles").GET(ExampleHandlerFunc, description2)
+					r.Root().Child("articles", &node.DumbForm{}).GET(ExampleHandlerFunc, description2)
 					h = r.Handler(prms2)
 					Expect(h).To(BeAssignableToTypeOf(&handler.Handler{}))
 				})
@@ -53,7 +53,7 @@ var _ = Describe("Router", func() {
 			Context("when route does not exist", func() {
 				It("returns nil", func() {
 					r := New()
-					params := params.New("/", node.GET, map[string][]string{})
+					params := params.New("/", node.GET, map[string]interface{}{})
 					Expect(r.Handler(params)).To(BeNil())
 				})
 			})
