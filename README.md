@@ -50,7 +50,7 @@ prms := params.New("/", node.GET, prms)
 rtr.Handler(prms)
 ```
 
-### Wrapper
+## Using with net/http lib
 
 ```golang
 server.ListenAndServe(":8080", rtr)
