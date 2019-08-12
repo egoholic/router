@@ -18,7 +18,6 @@ func New(path, verb string, params map[string]interface{}) *Params {
 	} else {
 		chunks = strings.Split(path, "/")
 	}
-
 	return &Params{path, chunks, verb, params}
 }
 func (p *Params) Path() string {

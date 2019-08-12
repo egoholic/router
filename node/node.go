@@ -55,7 +55,6 @@ func (n *Node) Child(pathChunk string, form Form) *Node {
 	n.staticChildren[pathChunk] = node
 	return node
 }
-
 func (n *Node) Handler(prms *params.Params, pathChunks *params.PathChunksIterator) *handler.Handler {
 	if n.form.CheckAndPopulate(n.pathChunk, pathChunks.Current(), prms) {
 		if pathChunks.HasNext() {
