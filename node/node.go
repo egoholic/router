@@ -2,7 +2,7 @@ package node
 
 import (
 	"github.com/egoholic/router/handler"
-	"github.com/egoholic/router/params"
+	"github.com/egoholic/router/path/chunk"
 )
 
 const (
@@ -13,85 +13,57 @@ const (
 	DELETE = "DELETE"
 )
 
-type Form interface {
-	CheckAndPopulate(pattern string, pathChunk string, prms *params.Params) bool
-}
-type Node struct {
-	pathChunk       string
-	form            Form
-	staticChildren  map[string]*Node
-	dynamicChildren map[string]*Node
-	verbHandlers    map[string]*handler.Handler
-}
+type (
+	Node struct {
+		chunk    *chunk.Chunk
+		children []*Node
+		handlers map[string]*handler.Handler
+	}
+	Option func(*Node)
+)
 
-func New(pch string, form Form) *Node {
-	return &Node{
-		pathChunk:       pch,
-		form:            form,
-		staticChildren:  map[string]*Node{},
-		dynamicChildren: map[string]*Node{},
-		verbHandlers:    map[string]*handler.Handler{},
+func New(pathChunk *chunk.Chunk, opts ...Option) *Node {
+	node := &Node{
+		chunk: pathChunk,
 	}
-}
-func (n *Node) Child(pathChunk string, form Form) *Node {
-	var (
-		node *Node
-		ok   bool
-	)
-	if pathChunk[0] == ':' {
-		node, ok = n.dynamicChildren[pathChunk]
-		if ok {
-			return node
-		}
-		node = New(pathChunk, form)
-		n.dynamicChildren[pathChunk] = node
-		return node
+	for _, opt := range opts {
+		opt(node)
 	}
-	node, ok = n.staticChildren[pathChunk]
-	if ok {
-		return node
-	}
-	node = New(pathChunk, form)
-	n.staticChildren[pathChunk] = node
 	return node
 }
-func (n *Node) Handler(prms *params.Params, pathChunks *params.PathChunksIterator) *handler.Handler {
-	if n.form.CheckAndPopulate(n.pathChunk, pathChunks.Current(), prms) {
-		if pathChunks.HasNext() {
-			chunk, _ := pathChunks.Next()
-			child, ok := n.staticChildren[chunk]
-			if ok && child.form.CheckAndPopulate(child.pathChunk, pathChunks.Current(), prms) {
-				return child.Handler(prms, pathChunks)
-			}
-			for _, child := range n.dynamicChildren {
-				if child != nil && child.form.CheckAndPopulate(child.pathChunk, pathChunks.Current(), prms) {
-					return child.Handler(prms, pathChunks)
-				}
-			}
-		} else {
-			return n.verbHandlers[prms.Verb()]
-		}
+func WithNewChild(pathChunk *chunk.Chunk, opts ...Option) Option {
+	child := New(pathChunk, opts...)
+	return func(n *Node) {
+		n.children = append(n.children, child)
 	}
-	return nil
 }
-func (n *Node) GET(fn handler.HandlerFn, d string) {
-	n.verbHandlers[GET] = handler.New(fn, d)
+func WithChild(child *Node) Option {
+	return func(n *Node) {
+		n.children = append(n.children, child)
+	}
 }
-func (n *Node) POST(fn handler.HandlerFn, d string) {
-	n.verbHandlers[POST] = handler.New(fn, d)
+func WithGetHandler(h *handler.Handler) Option {
+	return func(n *Node) {
+		n.handlers[GET] = h
+	}
 }
-func (n *Node) PUT(fn handler.HandlerFn, d string) {
-	n.verbHandlers[PUT] = handler.New(fn, d)
+func WithPostHandler(h *handler.Handler) Option {
+	return func(n *Node) {
+		n.handlers[POST] = h
+	}
 }
-func (n *Node) PATCH(fn handler.HandlerFn, d string) {
-	n.verbHandlers[PATCH] = handler.New(fn, d)
+func WithPutHandler(h *handler.Handler) Option {
+	return func(n *Node) {
+		n.handlers[PUT] = h
+	}
 }
-func (n *Node) DELETE(fn handler.HandlerFn, d string) {
-	n.verbHandlers[DELETE] = handler.New(fn, d)
+func WithPatchHandler(h *handler.Handler) Option {
+	return func(n *Node) {
+		n.handlers[PATCH] = h
+	}
 }
-
-type DumbForm struct{}
-
-func (_ *DumbForm) CheckAndPopulate(_ string, _ string, _ *params.Params) bool {
-	return true
+func WithDeleteHandler(h *handler.Handler) Option {
+	return func(n *Node) {
+		n.handlers[DELETE] = h
+	}
 }

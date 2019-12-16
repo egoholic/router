@@ -3,7 +3,7 @@
 ## Install
 
 ```
-dep ensure github.com/egoholic/router
+go get github.com/egoholic/router
 ```
 
 ```golang

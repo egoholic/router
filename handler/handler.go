@@ -6,19 +6,21 @@ import (
 	"github.com/egoholic/router/params"
 )
 
-type HandlerFn func(w http.ResponseWriter, r *http.Request, p *params.Params)
+type (
+	HandlerFn func(w http.ResponseWriter, r *http.Request, p *params.Params)
 
-type Handler struct {
-	handlerFn  HandlerFn
-	desription string
-}
+	Form interface {
+		FillAndVerifyParams(string, string, *params.Params)
+	}
 
-func New(fn HandlerFn, desc string) *Handler {
-	return &Handler{fn, desc}
-}
-func (h *Handler) HandlerFn() HandlerFn {
-	return h.handlerFn
-}
-func (h *Handler) Description() string {
-	return h.desription
+	Handler struct {
+		HandlerFn   HandlerFn
+		Form        Form
+		Description string
+	}
+)
+
+func (h *Handler) Handle(w http.ResponseWriter, r *http.Request, p *params.Params) {
+	h.Form.FillAndVerifyParams("","",p)
+	h.HandlerFn(w, r, p)
 }
