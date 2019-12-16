@@ -10,7 +10,7 @@ type (
 	HandlerFn func(w http.ResponseWriter, r *http.Request, p *params.Params)
 
 	Form interface {
-		FillAndVerifyParams(string, string, *params.Params)
+		FillAndVerifyParams(*params.Params)
 	}
 
 	Handler struct {
